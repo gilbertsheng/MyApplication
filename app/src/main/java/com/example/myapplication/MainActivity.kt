@@ -79,6 +79,8 @@ class MainActivity : AppCompatActivity() {
     private fun updateQuestion() {
         val id = questionBank[currentIdx].textResId
         binding.questionTextView.setText(id)
+        binding.trueButton.isEnabled = true
+        binding.falseButton.isEnabled = true
     }
 
     private fun checkAnswer(actual: Boolean) {
@@ -91,5 +93,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         Toast.makeText(this, id, Toast.LENGTH_SHORT).show()
+        binding.trueButton.isEnabled = false
+        binding.falseButton.isEnabled = false
     }
 }
