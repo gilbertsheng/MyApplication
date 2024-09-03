@@ -1,11 +1,14 @@
 package com.example.myapplication
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -13,11 +16,21 @@ import androidx.core.view.WindowInsetsCompat
 import com.example.myapplication.databinding.ActivityMainBinding
 
 private const val TAG = "MainActivity"
+private const val EXTRA_ANSWER_SHOWN = "com.example.myapplication.answer_shown"
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     private val quizViewModel: QuizViewModel by viewModels()
+
+    private val cheatLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            quizViewModel.isCheater =
+                result.data?.getBooleanExtra(EXTRA_ANSWER_SHOWN, false) ?: false
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +55,12 @@ class MainActivity : AppCompatActivity() {
             updateQuestion()
         }
 
+        binding.cheatButton.setOnClickListener {
+            val answer = quizViewModel.currentQuestionAnswer
+            val intent = CheatActivity.newIntent(this@MainActivity, answer)
+            cheatLauncher.launch(intent)
+        }
+
         updateQuestion()
     }
 
@@ -59,6 +78,7 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
         Log.d(TAG, "onPause() called")
     }
+
     override fun onStop() {
         super.onStop()
         Log.d(TAG, "onStop() called")
@@ -79,10 +99,10 @@ class MainActivity : AppCompatActivity() {
     private fun checkAnswer(actual: Boolean) {
         val expected = quizViewModel.currentQuestionAnswer
 
-        val id = if (actual == expected) {
-            R.string.correct_toast
-        } else {
-            R.string.incorrect_toast
+        val id = when {
+            quizViewModel.isCheater -> R.string.judgement_toast
+            actual == expected -> R.string.correct_toast
+            else -> R.string.incorrect_toast
         }
 
         Toast.makeText(this, id, Toast.LENGTH_SHORT).show()
